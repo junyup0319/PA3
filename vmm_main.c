@@ -108,19 +108,61 @@ uint8_t lookup_page_table(uint8_t page_num)
 
 void page_fault_handler(uint8_t page_num)
 {
+  // TODO: Fill this!
   FILE* fp = fopen("./input/BACKINGSTORE.bin", "r");
 
-  // TODO: Fill this!
+  // TODO 이렇게 읽어오는게 맞아?
+  // 값 확인하기....
+  fseek(fp, page_num * 256, SEEK_SET);
+  char backingstore_page[256];
+  fread(backingstore_page, 1, 256, fp);
+  // fprintf(stderr, "buf: %s\n", backingstore_page);
 
+
+  // phy_mem 에 저장
+  // for 문을 돌면서 page_num*256 + i에 한 비트를 저장해야하나?
+  int i;
+  for(i = 0; i < 256; i++) {
+    phy_mem[page_num * 256 + i] = backingstore_page[i];
+  }
+
+  // page_table 에 저장
+  page_table[page_num].frame_num = page_num;
+  page_table[page_num].is_valid = 1;
   fclose(fp);
 }
 
 uint32_t to_phy_addr(uint32_t virt_addr)
 {
-  return 0xdeadbeaf; // TODO: Make it work!
+  // TODO: Make it work!
+  uint8_t offset = 0x00ff & virt_addr;
+  uint8_t page_number = (0xff00 & virt_addr) >> 8;
+
+  // printf(">offset:%d\n", offset);
+  // printf(">page number:%d\n", page_number);
+
+  uint8_t frame_number = lookup_tlb(page_number);
+
+  // printf(">frame number:%d\n", frame_number);
+
+
+  // TODO
+  // frame_number & offset으로 physical memeory를 찾아야함
+  uint32_t phy_mem_addr = (frame_number << 8) | offset;
+  // fprintf(stderr, "<<%x\n", phy_mem_addr);
+  // return 0xdeadbeaf;
+  return phy_mem_addr;
 }
 
 uint8_t lookup_phy_mem(uint32_t phy_addr)
 {
-  return 0xbe; // TODO: Make it work!
+  // TODO: Make it work!
+
+  uint8_t offset = 0x00ff & phy_addr;
+  uint8_t frame_number = (0xff00 & phy_addr) >> 8;
+  
+  // fprintf(stderr, "pppp>> %x/\n", phy_addr);
+  return phy_mem[frame_number * 256 + offset];
+  // return phy_mem[phy_addr];
+  // return 0xbe; 
 }
